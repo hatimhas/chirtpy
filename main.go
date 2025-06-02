@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	const assetsDir = "./assets"
 	serveMux := http.NewServeMux()
 	server := &http.Server{
 		Handler: serveMux,
@@ -14,6 +15,7 @@ func main() {
 
 	// Use Handle method of serveMux
 	serveMux.Handle("/", http.FileServer(http.Dir("./static")))
+	serveMux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
 
 	log.Fatal(server.ListenAndServe())
 }
