@@ -29,10 +29,10 @@ func main() {
 	)
 
 	// Custom handler for the "/healthz" endpoint that responds with a 200 OK status and a plain text message.
-	serveMux.HandleFunc("/healthz", handlerHealth)
+	serveMux.HandleFunc("GET /healthz", handlerHealth)
 
-	serveMux.HandleFunc("/metrics", apiCfg.handlerHits)
-	serveMux.HandleFunc("/reset", apiCfg.handlerReset)
+	serveMux.HandleFunc("GET /metrics", apiCfg.handlerHits)
+	serveMux.HandleFunc("POST /reset", apiCfg.handlerReset)
 
 	// log.Fatal is used to log any error that occurs when starting the server. Triggered when the server fails to start or encounters an error while running.
 	log.Fatal(server.ListenAndServe())
