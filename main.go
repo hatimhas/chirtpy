@@ -29,10 +29,11 @@ func main() {
 	)
 
 	// Custom handler for the "/healthz" endpoint that responds with a 200 OK status and a plain text message.
-	serveMux.HandleFunc("GET /healthz", handlerHealth)
+	serveMux.HandleFunc("GET /api/healthz", handlerHealth)
+	serveMux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 
-	serveMux.HandleFunc("GET /metrics", apiCfg.handlerHits)
-	serveMux.HandleFunc("POST /reset", apiCfg.handlerReset)
+	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
+	serveMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
 	// log.Fatal is used to log any error that occurs when starting the server. Triggered when the server fails to start or encounters an error while running.
 	log.Fatal(server.ListenAndServe())
@@ -61,9 +62,15 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) handlerHits(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
+	html := fmt.Sprintf(`<html>
+  <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+  </body>
+</html>`, cfg.fileserverHits.Load())
+	w.Write([]byte(html))
 }
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
