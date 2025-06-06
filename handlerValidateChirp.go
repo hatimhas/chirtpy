@@ -14,7 +14,7 @@ func (c *apiConfig) handlerAddChirps(w http.ResponseWriter, req *http.Request) {
 		Body   string    `json:"body"`
 		UserId uuid.UUID `json:"user_id"`
 	}
-	type response struct {
+	type Chirp struct {
 		ID        uuid.UUID `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
@@ -46,7 +46,7 @@ func (c *apiConfig) handlerAddChirps(w http.ResponseWriter, req *http.Request) {
 		respondWithErr(w, http.StatusInternalServerError, "Couldnt create chirp", err)
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, response{
+	respondWithJSON(w, http.StatusCreated, Chirp{
 		ID:        chirp.ID,
 		CreatedAt: chirp.CreatedAt,
 		UpdatedAt: chirp.UpdatedAt,
