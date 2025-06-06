@@ -8,6 +8,7 @@ func (c *apiConfig) handlerGetAllChirps(w http.ResponseWriter, req *http.Request
 	dbChirps, err := c.dbQueries.GetAllChirps(req.Context())
 	if err != nil {
 		respondWithErr(w, http.StatusInternalServerError, "Couldnt get all chirps", err)
+		return
 	}
 	chirps := []Chirp{}
 	for _, chirp := range dbChirps {

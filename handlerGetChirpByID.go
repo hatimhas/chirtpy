@@ -22,6 +22,7 @@ func (c *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Request
 	chirpID, err := uuid.Parse(chirpReqId)
 	if err != nil {
 		respondWithErr(w, http.StatusBadRequest, "error parsing chirpID to uuid", err)
+		return
 	}
 	chirpDB, err := c.dbQueries.GetChirpById(req.Context(), chirpID)
 	if err != nil {

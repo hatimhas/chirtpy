@@ -20,6 +20,7 @@ func (c *apiConfig) handlerAddChirps(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&reqParams)
 	if err != nil {
 		respondWithErr(w, http.StatusInternalServerError, "Couldnt Decode parameters", err)
+		return
 	}
 
 	if len(reqParams.Body) > 140 {
