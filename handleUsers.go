@@ -11,7 +11,7 @@ import (
 	"github.com/hatimhas/chirtpy/internal/database"
 )
 
-type UserResponse struct {
+type User struct {
 	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -22,6 +22,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 	type parameters struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`
+	}
+	type response struct {
+		User
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -48,10 +51,12 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		respondWithErr(w, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, UserResponse{
-		ID:        addedUser.ID,
-		CreatedAt: addedUser.CreatedAt,
-		UpdatedAt: addedUser.UpdatedAt,
-		Email:     addedUser.Email,
+	respondWithJSON(w, http.StatusCreated, response{
+		User: User{
+			ID:        addedUser.ID,
+			CreatedAt: addedUser.CreatedAt,
+			UpdatedAt: addedUser.UpdatedAt,
+			Email:     addedUser.Email,
+		},
 	})
 }
