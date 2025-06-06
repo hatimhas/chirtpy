@@ -49,7 +49,7 @@ func main() {
 
 	// Custom handler for the "/healthz" endpoint that responds with a 200 OK status and a plain text message.
 	serveMux.HandleFunc("GET /api/healthz", handlerHealth)
-	serveMux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerAddChirps)
 	serveMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
