@@ -21,14 +21,17 @@ func main() {
 		log.Fatalf("failed to connect to the database: %v", err)
 	}
 	dbQueries := database.New(db)
-
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
 	// serveMux is a serve multiplexer that matches the URL of each incoming request against a list of registered patterns and calls the handler for the pattern that most closely matches the URL.
 	serveMux := http.NewServeMux()
 
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		dbQueries:      dbQueries,
-		platform:       os.Getenv("PLATFORM"),
+		platform:       platform,
 	}
 
 	server := &http.Server{
@@ -47,7 +50,7 @@ func main() {
 	// Custom handler for the "/healthz" endpoint that responds with a 200 OK status and a plain text message.
 	serveMux.HandleFunc("GET /api/healthz", handlerHealth)
 	serveMux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
-	serveMux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
+	serveMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
@@ -96,10 +99,13 @@ func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
 		respondWithErr(w, http.StatusForbidden, "Reset is only allowed in dev environment", nil)
 	}
-	cfg.dbQueries.DeleteAllUsers(r.Context())
+	err := cfg.dbQueries.DeleteAllUsers(r.Context())
+	if err != nil {
+		respondWithErr(w, http.StatusInternalServerError, "Failed to reset users", err)
+	}
 
 	prev := cfg.fileserverHits.Load() // get current value
 	cfg.fileserverHits.Store(0)       // reset to 0
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Hits before reset: %d\n", prev)
+	fmt.Fprintf(w, "DB reset to initial state, Hits before reset: %d\n", prev)
 }
