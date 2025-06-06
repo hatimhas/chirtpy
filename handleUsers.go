@@ -7,17 +7,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hatimhas/chirtpy/internal/auth"
+	"github.com/hatimhas/chirtpy/internal/database"
 )
+
+type UserResponse struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+}
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
 	type parameters struct {
-		Email string `json:"email"`
-	}
-	type response struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -28,13 +32,23 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		respondWithErr(w, http.StatusBadRequest, "Couldnt Decode parameters", err)
 		return
 	}
-	addedUser, err := cfg.dbQueries.CreateUser(req.Context(), reqParams.Email)
+
+	hashedPassword, err := auth.HashPassword(reqParams.Password)
+	if err != nil {
+		respondWithErr(w, http.StatusInternalServerError, "Failed to hash password", err)
+		return
+	}
+
+	addedUser, err := cfg.dbQueries.CreateUser(req.Context(), database.CreateUserParams{
+		Email:          reqParams.Email,
+		HashedPassword: hashedPassword,
+	})
 	if err != nil {
 		log.Printf("failed to create user: %v", err)
 		respondWithErr(w, http.StatusInternalServerError, "Failed to create user", err)
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, response{
+	respondWithJSON(w, http.StatusCreated, UserResponse{
 		ID:        addedUser.ID,
 		CreatedAt: addedUser.CreatedAt,
 		UpdatedAt: addedUser.UpdatedAt,
