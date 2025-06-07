@@ -13,6 +13,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type apiConfig struct {
+	fileserverHits atomic.Int32
+	dbQueries      *database.Queries
+	platform       string
+	secretKey      string
+}
+
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
@@ -32,6 +39,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		dbQueries:      dbQueries,
 		platform:       platform,
+		secretKey:      os.Getenv("SECRET"),
 	}
 
 	server := &http.Server{
@@ -71,12 +79,6 @@ func handlerHealth(w http.ResponseWriter, req *http.Request) {
 	// http.StatusOK is used to match the response body match with status code.
 	// Ex: if w.WriteHeader(http.StatusServiceUnavailable) is used, will result in a 503 Service Unavailable status code
 	w.Write([]byte(http.StatusText(http.StatusOK)))
-}
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-	dbQueries      *database.Queries
-	platform       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {

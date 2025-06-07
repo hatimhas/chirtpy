@@ -4,16 +4,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/hatimhas/chirtpy/internal/auth"
 )
 
-// TODO Query lookup using email body in req, compare the pw in db with pw in req. If lookup of email/matching pw fail return 401 unauthorized msg "Incorrect email or password". If match return 200 ok with JSON response (no PW).
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	type parameters struct {
-		Password string `json:"password"`
-		Email    string `json:"email"`
+		Password         string `json:"password"`
+		Email            string `json:"email"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 	type response struct {
 		User
@@ -42,12 +44,24 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, response{
+	expTime := reqParams.ExpiresInSeconds
+	if expTime > 3600 || expTime == 0 {
+		expTime = 3600
+	}
+	expiresIn := time.Duration(expTime) * time.Second
+	accessToken, err := auth.MakeJWT(userDB.ID, cfg.secretKey, expiresIn)
+	if err != nil {
+		fmt.Printf("Failed to create JWT token: %v\n", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        userDB.ID,
 			CreatedAt: userDB.CreatedAt,
 			UpdatedAt: userDB.UpdatedAt,
 			Email:     userDB.Email,
+			Token:     accessToken,
 		},
 	})
 }
