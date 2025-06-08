@@ -9,16 +9,17 @@ import (
 	"time"
 
 	"github.com/hatimhas/chirtpy/internal/auth"
+	"github.com/hatimhas/chirtpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	type parameters struct {
-		Password         string `json:"password"`
-		Email            string `json:"email"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 	type response struct {
 		User
+		RefreshToken string `json:"refresh_token"`
 	}
 	decoder := json.NewDecoder(req.Body)
 	reqParams := parameters{}
@@ -44,14 +45,24 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	expTime := reqParams.ExpiresInSeconds
-	if expTime > 3600 || expTime == 0 {
-		expTime = 3600
-	}
-	expiresIn := time.Duration(expTime) * time.Second
+	expiresIn := time.Duration(3600) * time.Second
 	accessToken, err := auth.MakeJWT(userDB.ID, cfg.secretKey, expiresIn)
 	if err != nil {
 		fmt.Printf("Failed to create JWT token: %v\n", err)
+		return
+	}
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	AddRefTokenParams, err := cfg.dbQueries.AddRefToken(req.Context(), database.AddRefTokenParams{
+		Token:  refreshToken,
+		UserID: userDB.ID,
+	})
+	if err != nil {
+		fmt.Printf("Failed to add refresh token to db: %v\n", err)
 		return
 	}
 
@@ -63,5 +74,6 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 			Email:     userDB.Email,
 			Token:     accessToken,
 		},
+		RefreshToken: AddRefTokenParams.Token,
 	})
 }
