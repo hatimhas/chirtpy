@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -41,4 +43,41 @@ func (q *Queries) AddRefToken(ctx context.Context, arg AddRefTokenParams) (Refre
 		&i.UserID,
 	)
 	return i, err
+}
+
+const getRefreshToken = `-- name: GetRefreshToken :one
+SELECT token, created_at, updated_at, expires_at, revoked_at, user_id FROM refresh_tokens
+WHERE token = $1 AND revoked_at IS NULL AND expires_at > NOW()
+`
+
+func (q *Queries) GetRefreshToken(ctx context.Context, token string) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, getRefreshToken, token)
+	var i RefreshToken
+	err := row.Scan(
+		&i.Token,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const revokeRefreshToken = `-- name: RevokeRefreshToken :exec
+UPDATE refresh_tokens
+SET revoked_at = $1,
+    updated_at = $2
+WHERE token = $3
+`
+
+type RevokeRefreshTokenParams struct {
+	RevokedAt sql.NullTime
+	UpdatedAt time.Time
+	Token     string
+}
+
+func (q *Queries) RevokeRefreshToken(ctx context.Context, arg RevokeRefreshTokenParams) error {
+	_, err := q.db.ExecContext(ctx, revokeRefreshToken, arg.RevokedAt, arg.UpdatedAt, arg.Token)
+	return err
 }

@@ -11,3 +11,13 @@ VALUES (
 RETURNING *;
 
 
+-- name: GetRefreshToken :one
+SELECT * FROM refresh_tokens
+WHERE token = $1 AND revoked_at IS NULL AND expires_at > NOW();
+
+
+-- name: RevokeRefreshToken :exec
+UPDATE refresh_tokens
+SET revoked_at = $1,
+    updated_at = $2
+WHERE token = $3;
