@@ -57,21 +57,22 @@ func main() {
 		),
 	)
 
-	// Custom handler for the "/healthz" endpoint that responds with a 200 OK status and a plain text message.
 	serveMux.HandleFunc("GET /api/healthz", handlerHealth)
-	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerAddChirps)
-	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
+	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetAllChirps)
+	serveMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirpByID)
+	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
+
 	serveMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefreshToken)
+	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerAddChirps)
 	serveMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevokeRefreshToken)
 	serveMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	serveMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
-	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetAllChirps)
-	serveMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirpByID)
-
 	serveMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerPolkaWebhook)
-	serveMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerChirpsDelete)
-	serveMux.HandleFunc("GET /admin/metrics", apiCfg.handlerHits)
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
+
+	serveMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerChirpsDelete)
+
+	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
 
 	// log.Fatal is used to log any error that occurs when starting the server. Triggered when the server fails to start or encounters an error while running.
 	log.Fatal(server.ListenAndServe())
